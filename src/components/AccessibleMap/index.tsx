@@ -5,14 +5,16 @@ import View from 'ol/View';
 import { OSM, Vector as VectorSource } from 'ol/source';
 import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 import './index.css'
-import { useEffect, useState } from 'react';
+import { RefObject, useEffect, useRef, useState } from 'react';
 import { Type } from 'ol/geom/Geometry';
 import zoomOutIconUrl from '@material-symbols/svg-400/outlined/zoom_out.svg';
 import zoomInIconUrl from '@material-symbols/svg-400/outlined/zoom_in.svg';
 import undoIconUrl from '@material-symbols/svg-400/outlined/undo.svg';
 import { Polygon } from 'ol/geom';
 import { get } from 'ol/proj';
-// import { GeometryFunction } from 'ol/style/Style';
+import { MousePosition } from 'ol/control'
+import { createStringXY } from 'ol/coordinate';
+import { defaults as defaultControls } from 'ol/control.js'
 
 const DarkModeIcon = (className: string, iconURL: string) => {
     return <img src={iconURL} className={className} alt="Dark Mode Icon" />;
@@ -28,6 +30,17 @@ const AccessibleMap = () => {
     const [typeSelect, setTypeSelect] = useState<string>('None');
     const [featureSource] = useState<VectorSource>(new VectorSource({ wrapX: false }));
     const [source] = useState<OSM | undefined>(new OSM());
+
+    const mousePosition = useRef(null)
+
+    const [mousePositionControl] = useState<MousePosition>(new MousePosition({
+        coordinateFormat: createStringXY(4),
+        projection: 'EPSG:4326',
+        // comment the following two lines to have the mouse position
+        // be placed within the map.
+        className: 'custom-mouse-position',
+        // target: mousePosition.current ?? undefined,
+    }))
 
     const raster = new TileLayer({
         source: source,
@@ -108,8 +121,13 @@ const AccessibleMap = () => {
         const translate = new Translate({
             features: select.getFeatures(),
         });
-        
+
+        if(mousePosition.current){
+            mousePositionControl.setTarget(mousePosition.current)
+        }
+
         const newMap = new Map({
+            controls: defaultControls().extend([mousePositionControl]),
             interactions: defaultInteractions().extend([select, translate]),
             layers: [raster, vector],
             target: 'map',
@@ -164,14 +182,33 @@ const AccessibleMap = () => {
         }
     };
 
+    const handleProjectionSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        mousePositionControl.setProjection(event.target.value);
+    }
+
+    const handlePrecision = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const format = createStringXY(event.target.valueAsNumber);
+        mousePositionControl.setCoordinateFormat(format);
+    }
+
     return (
         <div>
             <a className="skiplink" href="#map">Go to map</a>
             <div id="map" className="map mb-2" tabIndex={0}></div>
+            <div ref={mousePosition} className='block'></div>
+            <form className='flex mx-3 my-2'>
+                <label htmlFor="projection" className="flex-shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-500 bg-gray-100 border border-gray-300 rounded-s-lg focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600">Projection </label>
+                <select onChange={handleProjectionSelect} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-e-lg border-s-gray-100 dark:border-s-gray-700 border-s-2 focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mr-2">
+                    <option value="EPSG:4326">EPSG:4326</option>
+                    <option value="EPSG:3857">EPSG:3857</option>
+                </select>
+                <label htmlFor="precision" className="flex-shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-500 bg-gray-100 border border-gray-300 rounded-s-lg focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600">Precision</label>
+                <input onChange={event => handlePrecision(event)} className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-e-lg border-s-gray-100 dark:border-s-gray-700 border-s-2 focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500' type="number" min={0} max="12" defaultValue={4} />
+            </form>
             <div className="flex flex-wrap mx-3">
                 <span className="flex items-center">
-                    <label className="text-sm font-medium text-gray-700 w-32 mx-1" htmlFor="type">Geometry type:</label>
-                    <select className="block text-sm text-gray-700 rounded-sm" onChange={handleType} value={typeSelect}>
+                    <label className="flex-shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-500 bg-gray-100 border border-gray-300 rounded-s-lg focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600" htmlFor="type">Geometry type:</label>
+                    <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-e-lg border-s-gray-100 dark:border-s-gray-700 border-s-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" onChange={handleType} value={typeSelect}>
                         <option value="Point">Point</option>
                         <option value="LineString">LineString</option>
                         <option value="Polygon">Polygon</option>
