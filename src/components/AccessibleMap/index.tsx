@@ -15,6 +15,13 @@ import { get } from 'ol/proj';
 import { MousePosition } from 'ol/control'
 import { createStringXY } from 'ol/coordinate';
 import { defaults as defaultControls } from 'ol/control.js'
+import proj4 from 'proj4';
+import { Fill, Stroke, Style } from 'ol/style';
+import CircleStyle from 'ol/style/Circle';
+import { StyleLike } from 'ol/style/Style';
+import { FlatStyleLike } from 'ol/style/flat';
+
+proj4.defs('EPSG:32632', '+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs');
 
 const DarkModeIcon = (className: string, iconURL: string) => {
     return <img src={iconURL} className={className} alt="Dark Mode Icon" />;
@@ -31,9 +38,22 @@ const AccessibleMap = () => {
     const [featureSource] = useState<VectorSource>(new VectorSource({ wrapX: false }));
     const [source] = useState<OSM | undefined>(new OSM());
 
-    const mousePosition = useRef(null)
+    const [select, setSelect] = useState<Select>(new Select({
+        style: new Style({
+            stroke: new Stroke({
+                color: 'purple',
+                width: 2,
+            }),
+            fill: new Fill({
+                color: 'lightgreen',
+            })
+        }),
+    }));
+    const [translate, setTranslate] = useState<Translate>(new Translate({
+        features: select?.getFeatures(),
+    }));
 
-    const [mousePositionControl] = useState<MousePosition>(new MousePosition({
+    const [mousePositionControl, setMousePositionControl] = useState<MousePosition>(new MousePosition({
         coordinateFormat: createStringXY(4),
         projection: 'EPSG:4326',
         // comment the following two lines to have the mouse position
@@ -42,13 +62,68 @@ const AccessibleMap = () => {
         // target: mousePosition.current ?? undefined,
     }))
 
+    const styles: {
+        Point?: StyleLike | FlatStyleLike;
+        LineString?: StyleLike | FlatStyleLike;
+        Polygon?: StyleLike | FlatStyleLike;
+        Circle?: StyleLike | FlatStyleLike;
+    } = {
+        Point: {
+            'circle-radius': 5,
+            'circle-fill-color': 'green',
+        },
+        LineString: {
+            'circle-radius': 5,
+            'circle-fill-color': 'purple',
+            'stroke-color': 'purple',
+            'stroke-width': 3,
+            'fill-color': 'green',
+            'circle-stroke-color': 'green'
+        },
+        Polygon: {
+            'circle-radius': 5,
+            'circle-fill-color': 'purple',
+            'stroke-color': 'purple',
+            'stroke-width': 3,
+            'fill-color': 'green',
+            'circle-stroke-color': 'green'
+        },
+        Circle: {
+            'circle-radius': 5,
+            'circle-fill-color': 'purple',
+            'stroke-color': 'purple',
+            'stroke-width': 3,
+            'fill-color': 'green',
+            'circle-stroke-color': 'green'
+        },
+    };
+
     const raster = new TileLayer({
         source: source,
     });
 
     const vector = new VectorLayer({
         source: featureSource,
+        style: {
+            'stroke-color': 'purple',
+            'stroke-width': 2,
+            'fill-color': 'green',
+        }
     });
+
+
+    // useEffect(() => {
+    //     const utmProjection = get('EPSG:32632');
+    //     const mapProjection = map?.getView().getProjection();
+    //     const mousePosition = new MousePosition({
+    //       coordinateFormat: (coordinate) => {
+    //         const utmCoordinate = transform(coordinate, mapProjection, utmProjection);
+    //         return createStringXY(4)(utmCoordinate);
+    //       },
+    //     });
+    //     setMousePositionControl(mousePosition);
+    //     map?.addControl(mousePosition);
+    //   }, []);
 
     const addInteraction = () => {
         let value = typeSelect;
@@ -92,6 +167,7 @@ const AccessibleMap = () => {
             const newDraw = new Draw({
                 source: featureSource,
                 type: value as Type,
+                style: styles[value],
                 geometryFunction: geometryFunction as GeometryFunction,
                 // freehand: true
             });
@@ -100,30 +176,28 @@ const AccessibleMap = () => {
 
             map?.addInteraction(newSnap);
 
-            const newModify = new Modify({ source: featureSource });
+            const newModify = new Modify({
+                source: featureSource, style: {
+                    'stroke-color': 'purple',
+                    'circle-stroke-color': 'green'
+                }
+            });
             map?.addInteraction(newModify);
+
+            // setSelect(new Select)
+            // setTranslate(new Translate({
+            //     features: select?.getFeatures(),
+            // }))
 
             setDraw(newDraw);
         }
     };
 
     useEffect(() => {
-        // setFeatureSource(new VectorSource({ wrapX: false }))
-        // setSource(new OSM())
-        const extent = get('EPSG:3857')?.getExtent().slice();
+        const extent = get('EPSG:32632')?.getExtent().slice();
         if (extent) {
             extent[0] += extent[0];
             extent[2] += extent[2];
-        }
-
-        const select = new Select();
-
-        const translate = new Translate({
-            features: select.getFeatures(),
-        });
-
-        if(mousePosition.current){
-            mousePositionControl.setTarget(mousePosition.current)
         }
 
         const newMap = new Map({
@@ -195,12 +269,12 @@ const AccessibleMap = () => {
         <div>
             <a className="skiplink" href="#map">Go to map</a>
             <div id="map" className="map mb-2" tabIndex={0}></div>
-            <div ref={mousePosition} className='block'></div>
             <form className='flex mx-3 my-2'>
                 <label htmlFor="projection" className="flex-shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-500 bg-gray-100 border border-gray-300 rounded-s-lg focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600">Projection </label>
                 <select onChange={handleProjectionSelect} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-e-lg border-s-gray-100 dark:border-s-gray-700 border-s-2 focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mr-2">
                     <option value="EPSG:4326">EPSG:4326</option>
                     <option value="EPSG:3857">EPSG:3857</option>
+                    <option value="EPSG:32632">EPSG:32632</option>
                 </select>
                 <label htmlFor="precision" className="flex-shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-500 bg-gray-100 border border-gray-300 rounded-s-lg focus:ring-4 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600">Precision</label>
                 <input onChange={event => handlePrecision(event)} className='bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-e-lg border-s-gray-100 dark:border-s-gray-700 border-s-2 focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500' type="number" min={0} max="12" defaultValue={4} />

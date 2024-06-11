@@ -21,3 +21,11 @@
   #map:focus {
     outline: #4A74A8 solid 0.15em;
   }
+
+  .custom-mouse-position {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    margin: 10px;
+    z-index: 1; /* or a higher value if needed */
+  }
