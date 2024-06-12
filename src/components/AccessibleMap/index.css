@@ -24,8 +24,17 @@
 
   .custom-mouse-position {
     position: absolute;
-    bottom: 0;
-    left: 0;
+    top: 0;
+    right: 0;
     margin: 10px;
     z-index: 1; /* or a higher value if needed */
   }
+
+  .custom-full-screen {
+    @apply bg-white
+  }
+
+  .custom-full-screen button{
+    @apply w-9 h-11 py-5 flex justify-center items-center bg-blue-500 hover:bg-blue-700 text-white rounded-full;
+  }
+  
