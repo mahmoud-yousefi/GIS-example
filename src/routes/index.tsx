@@ -1,14 +1,14 @@
 import { Route, Routes } from 'react-router-dom';
-import AccessibleMap from '../components/AccessibleMap';
+import AccessibleMap from '../components/OpenLayers';
 import Home from '../components/Home';
-import AdvancedMapboxVectorTiles from '../components/AdvancedMapboxVectorTiles';
+import AdvancedMapboxVectorTiles from '../components/MapLibre';
 
 const RoutesProvider = () => {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/accessible-map" element={<AccessibleMap />} />
-      <Route path="/advanced-mapbox-vector-titles" element={<AdvancedMapboxVectorTiles />} />
+      <Route path="/openlayers" element={<AccessibleMap />} />
+      <Route path="/maplibre" element={<AdvancedMapboxVectorTiles />} />
     </Routes>
   );
 };

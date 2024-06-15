@@ -5,16 +5,16 @@ import View from 'ol/View';
 import { OSM, Vector as VectorSource } from 'ol/source';
 import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 import './index.css'
-import { RefObject, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Type } from 'ol/geom/Geometry';
 import zoomOutIconUrl from '@material-symbols/svg-400/outlined/zoom_out.svg';
 import zoomInIconUrl from '@material-symbols/svg-400/outlined/zoom_in.svg';
 import undoIconUrl from '@material-symbols/svg-400/outlined/undo.svg';
-import fullscreenIcon from '@material-symbols/svg-400/outlined/fullscreen.svg';
-import { Polygon } from 'ol/geom';
+import { Polygon, MultiPoint } from 'ol/geom';
+import { ObjectWithGeometry } from 'ol/Feature';
 import { get } from 'ol/proj';
 import { Control, FullScreen, MousePosition, ScaleLine } from 'ol/control'
-import { createStringXY } from 'ol/coordinate';
+import { Coordinate, createStringXY } from 'ol/coordinate';
 import { defaults as defaultControls } from 'ol/control.js'
 import proj4 from 'proj4';
 import { Circle, Fill, Stroke, Style } from 'ol/style';
@@ -22,6 +22,7 @@ import CircleStyle from 'ol/style/Circle';
 import { StyleLike } from 'ol/style/Style';
 import { FlatStyleLike } from 'ol/style/flat';
 import { Units } from 'ol/control/ScaleLine';
+import { getCenter, getHeight, getWidth } from 'ol/extent';
 
 proj4.defs('EPSG:32632', '+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs');
 
@@ -84,7 +85,7 @@ const AccessibleMap = () => {
             'fill-color': shapesColor.Circle,
             'stroke-color': 'purple',
             'stroke-width': 2,
-            'text-stroke-width': 3,
+            // 'circle-stroke-width': 2,
             "circle-fill-color": 'purple',
             "circle-radius": 6,
             'circle-stroke-color': 'rgba(100, 255, 0, 0.9)'
@@ -119,7 +120,7 @@ const AccessibleMap = () => {
     }));
 
     const fullscreenRef = useRef<HTMLDivElement | null>(null);
-    
+
     const [mousePositionControl, setMousePositionControl] = useState<MousePosition>(new MousePosition({
         coordinateFormat: createStringXY(4),
         projection: 'EPSG:4326',
@@ -134,16 +135,121 @@ const AccessibleMap = () => {
         source: source,
     });
 
+    const style = new Style({
+        fill: new Fill({
+            color: 'rgba(100, 255, 0, 0.6)'
+        }),
+        stroke: new Stroke({
+            color: 'purple',
+            width: 2
+        }),
+        image: new CircleStyle({
+            radius: 6,
+            fill: new Fill({
+                color: 'purple'
+            }),
+            stroke: new Stroke({
+                color: 'rgba(100, 255, 0, 0.9)'
+            })
+        })
+    })
+
+    function calculateCenter(geometry: ObjectWithGeometry) {
+        let center, coordinates, minRadius;
+        const type = geometry.getType();
+        if (type === 'Polygon') {
+            let x = 0;
+            let y = 0;
+            let i = 0;
+            coordinates = geometry.getCoordinates()[0].slice(1);
+            coordinates.forEach(function (coordinate: Coordinate) {
+                x += coordinate[0];
+                y += coordinate[1];
+                i++;
+            });
+            center = [x / i, y / i];
+        } else if (type === 'LineString') {
+            center = geometry.getCoordinateAt(0.5);
+            coordinates = geometry.getCoordinates();
+        } else {
+            center = getCenter(geometry.getExtent());
+        }
+        let sqDistances;
+        if (coordinates) {
+            sqDistances = coordinates.map(function (coordinate: Coordinate) {
+                const dx = coordinate[0] - center[0];
+                const dy = coordinate[1] - center[1];
+                return dx * dx + dy * dy;
+            });
+            minRadius = Math.sqrt(Math.max.apply(Math, sqDistances)) / 3;
+        } else {
+            minRadius =
+                Math.max(
+                    getWidth(geometry.getExtent()),
+                    getHeight(geometry.getExtent()),
+                ) / 3;
+        }
+        return {
+            center: center,
+            coordinates: coordinates,
+            minRadius: minRadius,
+            sqDistances: sqDistances,
+        };
+    }
+
     const vector = new VectorLayer({
         source: featureSource,
-        style: {
-            'fill-color': 'rgba(100, 255, 0, 0.6)',
-            'stroke-color': 'purple',
-            'stroke-width': 2,
-            "circle-fill-color": 'purple',
-            "circle-radius": 6,
-            'circle-stroke-color': 'rgba(100, 255, 0, 0.9)'
-        }
+        // style: {
+        //     'fill-color': 'rgba(100, 255, 0, 0.6)',
+        //     'stroke-color': 'purple',
+        //     'stroke-width': 2,
+        //     "circle-fill-color": 'purple',
+        //     "circle-radius": 6,
+        //     'circle-stroke-color': 'rgba(100, 255, 0, 0.9)',
+        // }
+        style: function (feature) {
+            const styles = [style];
+            const modifyGeometry = feature.get('modifyGeometry');
+            const geometry = modifyGeometry
+                ? modifyGeometry.geometry
+                : feature.getGeometry();
+            const result = calculateCenter(geometry);
+            const center = result.center;
+            if (center) {
+                // styles.push(
+                //     new Style({
+                //         geometry: new Point(center),
+                //         image: new CircleStyle({
+                //             radius: 4,
+                //             fill: new Fill({
+                //                 color: '#ff3333',
+                //             }),
+                //         }),
+                //     }),
+                // );
+                const coordinates = result.coordinates;
+                if (coordinates) {
+                    const minRadius = result.minRadius;
+                    const sqDistances = result.sqDistances;
+                    const rsq = minRadius * minRadius;
+                    const points = coordinates.filter(function (coordinate: Coordinate, index: number) {
+                        return sqDistances[index] > rsq;
+                    });
+                    styles.push(
+                        new Style({
+                            geometry: new MultiPoint(points),
+                            image: new CircleStyle({
+                                radius: 6,
+                                fill: new Fill({
+                                    color: '#33cc33',
+                                }),
+                            }),
+                        }),
+                    );
+                }
+            }
+            return styles;
+        },
     });
 
     const [newSnap] = useState(new Snap({ source: featureSource, }));
@@ -231,6 +337,8 @@ const AccessibleMap = () => {
     //   }
     // };
 
+    const [shapePoint, setShapePoint] = useState(null)
+
     const addInteraction = () => {
         let value = typeSelect;
         if (value !== 'None') {
@@ -279,11 +387,23 @@ const AccessibleMap = () => {
                 geometryFunction: geometryFunction as GeometryFunction,
                 // freehand: true
             });
+
             map?.addInteraction(newDraw);
 
             setDraw(newDraw);
         }
     };
+
+    // const getCornerPoints = (coordinates) => {
+    //     const cornerPoints = [];
+    //     for (let i = 0; i < coordinates.length; i++) {
+    //         const point = coordinates[i];
+    //         const nextPoint = coordinates[(i + 1) % coordinates.length];
+    //         const cornerPoint = [(point[0] + nextPoint[0]) / 2, (point[1] + nextPoint[1]) / 2];
+    //         cornerPoints.push(cornerPoint);
+    //     }
+    //     return cornerPoints;
+    // };
 
     useEffect(() => {
         const extent = get('EPSG:32632')?.getExtent().slice();
@@ -307,11 +427,11 @@ const AccessibleMap = () => {
 
         setMap(newMap);
 
-        if(fullscreenRef.current){
+        if (fullscreenRef.current) {
             const fullScreenControl = new FullScreen({
                 className: 'custom-full-screen',
                 target: fullscreenRef.current
-              });
+            });
             newMap.addControl(fullScreenControl);
         }
 
@@ -367,6 +487,7 @@ const AccessibleMap = () => {
         mousePositionControl.setCoordinateFormat(format);
     }
 
+
     return (
         <div>
             <a className="skiplink" href="#map">Go to map</a>
@@ -401,7 +522,7 @@ const AccessibleMap = () => {
                         <button className="mx-1 bg-blue-500 hover:bg-blue-700 text-white py-2 px-2 rounded-full" type="button" onClick={handleUndo}>{DarkModeIcon("w-5", undoIconUrl)}</button>
                         <button className='mx-1 bg-blue-500 hover:bg-blue-700 text-white py-2 px-2 rounded-full' onClick={handleZoomOut}>{DarkModeIcon("w-5", zoomOutIconUrl)}</button>
                         <button className='mx-1 bg-blue-500 hover:bg-blue-700 text-white py-2 px-2 rounded-full' onClick={handleZoomIn}>{DarkModeIcon("w-5", zoomInIconUrl)}</button>
-                        <div className='mx-1'  ref={fullscreenRef}></div>
+                        <div className='mx-1' ref={fullscreenRef}></div>
                     </div>
                 </div>
                 <div className='px-2'>
@@ -451,6 +572,8 @@ const AccessibleMap = () => {
                             )
                         }
                     </form>
+                </div>
+                <div>
                 </div>
             </div>
         </div>
