@@ -1,7 +1,17 @@
-.map {
+body {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+#map:focus {
+    outline: #4A74A8 solid 0.15em;
+}
+
+#map{
     width: 100%;
     height: 400px;
-  }
-.map {
-    background: #f8f4f0;
 }

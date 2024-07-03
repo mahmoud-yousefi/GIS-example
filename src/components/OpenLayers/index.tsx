@@ -30,7 +30,7 @@ const DarkModeIcon = (className: string, iconURL: string) => {
     return <img src={iconURL} className={className} alt="Dark Mode Icon" />;
 };
 
-const AccessibleMap = () => {
+const OpenLayers = () => {
     const [map, setMap] = useState<Map | null>(null);
     const [draw, setDraw] = useState<Draw | null>(null);
     // const [snap, setSnap] = useState<Snap | null>(null);
@@ -580,4 +580,4 @@ const AccessibleMap = () => {
     );
 };
 
-export default AccessibleMap;
+export default OpenLayers;
