@@ -7,6 +7,11 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import './index.css'
 
+maplibregl.setRTLTextPlugin(
+    'https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js',
+    true // Lazy load the plugin
+);
+
 const MapWithDrawSupport: React.FC = () => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const squareRef = useRef<HTMLDivElement>(null);
@@ -23,8 +28,8 @@ const MapWithDrawSupport: React.FC = () => {
             const initializedMap = new maplibregl.Map({
                 container: mapContainerRef.current!,
                 style: 'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
-                center: [-91.874, 42.76],
-                zoom: 12,
+                center: [50.3763, 33.2788],
+                zoom: 4,
             });
 
             initializedMap.on('load', () => {
@@ -83,7 +88,7 @@ const MapWithDrawSupport: React.FC = () => {
     return (
         <div className="relative h-screen" id='map'>
             <div ref={mapContainerRef} className="w-full h-full" />
-            <pre className="block absolute top-0 left-[25%] w-1/2 p-2 font-bold border-none rounded text-sm text-center text-[#414040]">
+            <pre className="block absolute top-0 left-[33%] p-2 font-bold border-none rounded text-sm text-center text-[#414040]">
                 {`${JSON.stringify(mouseCoordinates.point)}\n${JSON.stringify(mouseCoordinates.lngLat)}`}
             </pre>
             <div className="absolute bottom-10 left-4 bg-white bg-opacity-90 p-4 rounded shadow-md text-center text-sm h-28 w-48">
