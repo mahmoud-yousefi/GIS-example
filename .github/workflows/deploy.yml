@@ -23,10 +23,15 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          pnpm install
+          pnpm list --depth=0  # Log installed dependencies
 
       - name: Build project
-        run: pnpm run build
+        run: |
+          pnpm run build
+        env:
+          CI: true  # Ensure CI environment
 
       - name: Upload production-ready build files
         uses: actions/upload-artifact@v3  # Updated to v3
