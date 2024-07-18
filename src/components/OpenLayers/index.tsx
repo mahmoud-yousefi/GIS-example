@@ -26,7 +26,7 @@ import { getCenter, getHeight, getWidth } from 'ol/extent';
 
 proj4.defs('EPSG:32632', '+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs');
 
-const DarkModeIcon = (className: string, iconURL: string) => {
+export const DarkModeIcon = (className: string, iconURL: string) => {
     return <img src={iconURL} className={className} alt="Dark Mode Icon" />;
 };
 

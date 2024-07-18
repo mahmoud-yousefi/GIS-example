@@ -9,6 +9,7 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 const MapboxExample: React.FC = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
+  const drawRef = useRef<MapboxDraw | null>(null); // Ref for MapboxDraw instance
   const [roundedArea, setRoundedArea] = useState<number | undefined>(undefined);
 
   useEffect(() => {
@@ -22,7 +23,7 @@ const MapboxExample: React.FC = () => {
         zoom: 12
       });
 
-      const draw = new MapboxDraw({
+      drawRef.current = new MapboxDraw({
         displayControlsDefault: false,
         controls: {
           polygon: true,
@@ -31,28 +32,29 @@ const MapboxExample: React.FC = () => {
         defaultMode: 'draw_polygon'
       });
 
-      mapRef.current.addControl(draw);
+      if (mapRef.current && drawRef.current) {
+        mapRef.current.addControl(drawRef.current);
 
-      mapRef.current.on('draw.create', updateArea);
-      mapRef.current.on('draw.delete', updateArea);
-      mapRef.current.on('draw.update', updateArea);
-
-      function updateArea(e: any) {
-        const data = draw.getAll();
-        if (data.features.length > 0) {
-          const area = turf.area(data);
-          setRoundedArea(Math.round(area * 100) / 100);
-        } else {
-          setRoundedArea(undefined);
-          if (e.type !== 'draw.delete') alert('Click the map to draw a polygon.');
-        }
+        mapRef.current.on('draw.create', updateArea);
+        mapRef.current.on('draw.delete', updateArea);
+        mapRef.current.on('draw.update', updateArea);
       }
     }
   }, []);
 
+  function updateArea(e: any) {
+    const data = drawRef.current?.getAll();
+    if (data && data.features.length > 0) {
+      const area = turf.area(data);
+      setRoundedArea(Math.round(area * 100) / 100);
+    } else {
+      setRoundedArea(undefined);
+      if (e.type !== 'draw.delete') alert('Click the map to draw a polygon.');
+    }
+  }
+
   return (
-    <>
-      <div ref={mapContainerRef} id="map" className="h-full"></div>
+    <div ref={mapContainerRef} id="map" className="h-full">
       <div className="calculation-box h-20 w-36 absolute bottom-10 left-2.5 bg-white bg-opacity-90 p-4 text-center">
         <p className="font-sans m-0 text-xs">Click the map to draw a polygon.</p>
         <div id="calculated-area">
@@ -66,7 +68,7 @@ const MapboxExample: React.FC = () => {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
