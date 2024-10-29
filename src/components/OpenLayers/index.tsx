@@ -114,14 +114,14 @@ const OpenLayers = () => {
         }),
     }
 
-    const [select, setSelect] = useState<Select>(new Select(SelectStyles));
-    const [translate, setTranslate] = useState<Translate>(new Translate({
+    const [select] = useState<Select>(new Select(SelectStyles));
+    const [translate] = useState<Translate>(new Translate({
         features: select?.getFeatures(),
     }));
 
     const fullscreenRef = useRef<HTMLDivElement | null>(null);
 
-    const [mousePositionControl, setMousePositionControl] = useState<MousePosition>(new MousePosition({
+    const [mousePositionControl] = useState<MousePosition>(new MousePosition({
         coordinateFormat: createStringXY(4),
         projection: 'EPSG:4326',
         // comment the following two lines to have the mouse position
@@ -155,7 +155,7 @@ const OpenLayers = () => {
     })
 
     function calculateCenter(geometry: ObjectWithGeometry) {
-        let center, coordinates, minRadius;
+        let center: any, coordinates: any, minRadius: any;
         const type = geometry.getType();
         if (type === 'Polygon') {
             let x = 0;
@@ -232,7 +232,7 @@ const OpenLayers = () => {
                     const minRadius = result.minRadius;
                     const sqDistances = result.sqDistances;
                     const rsq = minRadius * minRadius;
-                    const points = coordinates.filter(function (coordinate: Coordinate, index: number) {
+                    const points = coordinates.filter(function (index: number) {
                         return sqDistances[index] > rsq;
                     });
                     styles.push(
@@ -286,7 +286,6 @@ const OpenLayers = () => {
     const [showScaleText, setShowScaleText] = useState(true);
     // const [invertColors, setInvertColors] = useState(false);
     const [control, setControl] = useState<Control>(new ScaleLine({ units }));
-    const [fullScreen, setFullScreen] = useState(false);
 
     useEffect(() => {
         if (map) {
@@ -336,8 +335,6 @@ const OpenLayers = () => {
     //     control.element.classList.toggle('ol-scale-bar-inverted', invertColors);
     //   }
     // };
-
-    const [shapePoint, setShapePoint] = useState(null)
 
     const addInteraction = () => {
         let value = typeSelect;

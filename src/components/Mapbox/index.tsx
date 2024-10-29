@@ -33,7 +33,7 @@ const MapboxExample: React.FC = () => {
       });
 
       if (mapRef.current && drawRef.current) {
-        mapRef.current.addControl(drawRef.current);
+        mapRef.current.addControl(drawRef.current as any);
 
         mapRef.current.on('draw.create', updateArea);
         mapRef.current.on('draw.delete', updateArea);
