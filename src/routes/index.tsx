@@ -8,11 +8,11 @@ import Mapbox from '../components/Mapbox';
 const RoutesProvider = () => {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/openlayers" element={<AccessibleMap />} />
-      <Route path="/MapWith3DModels" element={<MapWith3DModels />} />
-      <Route path="/maplibre" element={<MapLibre />} />
-      <Route path="/Mapbox" element={<Mapbox />} />
+      <Route path="/GIS-example/" element={<Home />} />
+      <Route path="/GIS-example/openlayers" element={<AccessibleMap />} />
+      <Route path="/GIS-example/MapWith3DModels" element={<MapWith3DModels />} />
+      <Route path="/GIS-example/maplibre" element={<MapLibre />} />
+      <Route path="/GIS-example/Mapbox" element={<Mapbox />} />
     </Routes>
   );
 };
