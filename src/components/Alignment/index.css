@@ -2,6 +2,7 @@
     width: 100%;
     height: 400px;
   }
+  
   a.skiplink {
     position: absolute;
     clip: rect(1px, 1px, 1px, 1px);
@@ -11,6 +12,7 @@
     width: 1px;
     overflow: hidden;
   }
+  
   a.skiplink:focus {
     clip: auto;
     height: auto;
@@ -18,23 +20,24 @@
     background-color: #fff;
     padding: 0.3em;
   }
+  
   #map:focus {
     outline: #4A74A8 solid 0.15em;
   }
-
+  
   .custom-mouse-position {
     position: absolute;
     top: 0;
     right: 0;
     margin: 10px;
     z-index: 1;
-  }
-
-  .custom-full-screen {
-    @apply bg-white
-  }
-
-  .custom-full-screen button{
-    @apply w-9 h-11 py-5 flex justify-center items-center bg-blue-500 hover:bg-blue-700 text-white rounded-full;
+    /* or a higher value if needed */
   }
   
+  /* .custom-full-screen-alignment {
+    @apply bg-white
+  }
+  
+  .custom-full-screen-alignment button {
+    @apply w-9 h-11 py-5 flex justify-center items-center bg-blue-500 hover: bg-blue-700 text-white rounded-full;
+  } */

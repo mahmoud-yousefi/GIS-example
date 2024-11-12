@@ -4,6 +4,7 @@ import Home from '../components/Home';
 import MapWith3DModels from '../components/MapWith3DModels';
 import MapLibre from '../components/MapLibre';
 import Mapbox from '../components/Mapbox';
+import Alignment from '../components/Alignment';
 
 const RoutesProvider = () => {
   return (
@@ -13,6 +14,7 @@ const RoutesProvider = () => {
       <Route path="/GIS-example/MapWith3DModels" element={<MapWith3DModels />} />
       <Route path="/GIS-example/maplibre" element={<MapLibre />} />
       <Route path="/GIS-example/Mapbox" element={<Mapbox />} />
+      <Route path="/GIS-example/Alignment" element={<Alignment />} />
     </Routes>
   );
 };
